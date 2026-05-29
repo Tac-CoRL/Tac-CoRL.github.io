@@ -276,10 +276,28 @@ figcaption,
 
 .title-line {
   max-width: min(96vw, 1400px);
-  margin: 0 auto 1rem;
-  white-space: nowrap;
+  margin: 0 auto 1.05rem;
   letter-spacing: 0;
-  font-size: clamp(2rem, 3.1vw, 3.7rem);
+  line-height: 1.02;
+  text-align: center;
+}
+
+.title-main,
+.title-sub {
+  display: block;
+}
+
+.title-main {
+  font-size: clamp(4rem, 9vw, 8.8rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.title-sub {
+  margin-top: 0.28rem;
+  font-size: clamp(1.85rem, 3.25vw, 3.7rem);
+  font-weight: 760;
+  letter-spacing: -0.01em;
 }
 
 .intro-prose {
@@ -744,7 +762,16 @@ figcaption {
 
   .title-line {
     max-width: 100%;
-    font-size: clamp(2.2rem, 9vw, 3.3rem);
+  }
+
+  .title-main {
+    font-size: clamp(3.25rem, 17vw, 5.4rem);
+  }
+
+  .title-sub {
+    margin-top: 0.35rem;
+    font-size: clamp(1.65rem, 7.2vw, 2.7rem);
+    line-height: 1.08;
   }
 
   .hero-tagline {
