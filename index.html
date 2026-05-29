@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TacCoRL</title>
+  <meta name="description" content="Anonymous under-review project page for TacCoRL, a sim-to-real tactile post-training framework for contact-rich manipulation.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav id="toc-nav">
+  <div class="toc-inner">
+    <p class="toc-title">On This Page</p>
+    <a class="toc-link" href="#introduction">Introduction</a>
+    <a class="toc-link" href="#demos">Demos</a>
+    <a class="toc-link" href="#method">Method</a>
+    <a class="toc-link" href="#results">Results</a>
+    <a class="toc-link" href="#rollouts">Rollouts</a>
+    <a class="toc-link" href="#analysis">Analysis</a>
+    <a class="toc-link" href="#faq">FAQ</a>
+  </div>
+</nav>
+
+<div id="hero-title">
+  <p class="status-pill">Anonymous Submission &middot; Under Review</p>
+  <h1 class="title-line">TacCoRL: Integrating Tactile Feedback into VLA via Simulation</h1>
+  <p class="hero-tagline">A sim-to-real post-training framework that turns tactile contact histories into closed-loop action corrections for contact-rich bimanual manipulation.</p>
+  <p class="hero-note">Project page prepared for anonymous review.</p>
+
+  <div id="introduction" class="intro-prose">
+    <p>Precise contact-rich manipulation requires vision to interpret the scene and touch to resolve interactions at the contact interface. Vision-language-action policies provide strong visual representations, language grounding, and action priors from large-scale data, but in tight-tolerance tasks such as insertion, assembly, and in-hand manipulation, cameras often cannot reliably observe whether the manipulated part is properly aligned, where contact occurs, or how pressure is distributed. Tactile sensing provides this complementary signal by revealing local contact location, pressure distribution, and misalignment.</p>
+    <p>Real demonstrations alone are ill-suited for this injection problem: they are costly to scale, emphasize successful nominal behavior, and underrepresent the near-failure cases where tactile feedback is most critical. TacCoRL treats tactile integration as an efficient sim-to-real post-training framework for pretrained VLA policies. A real-aligned simulator provides a safe, resettable environment for closed-loop contact learning; mixed sim-real co-training initializes tactile-conditioned actions; and simulation-based reinforcement learning refines contact-guided corrections while a supervised real-data anchor keeps the policy aligned with deployment visual, tactile, and action distributions.</p>
+  </div>
+</div>
+
+<section id="demos">
+  <span class="section-tag">Demos</span>
+  <h2>TacCoRL is evaluated on four contact-rich bimanual tasks.</h2>
+  <p class="body-text">We evaluate on the bimanual platform described in the source materials, using matched camera, action, and tactile interfaces across the real and simulated setups. The four tasks are Test Tube Insertion, Do Puzzle, Assembly #1, and Assembly #2. For each task, the study collects 50 real demonstrations and 20 simulated teleoperation trajectories, expands the simulated set to 200 trajectories using MimicGen, and evaluates with 128 parallel simulation environments and 20 real-world trials per task.</p>
+
+  <div class="demo-grid">
+    <article class="demo-card">
+      <div class="video-frame">
+        <span class="demo-name">Test Tube Insertion</span>
+        <span class="demo-note">Demo video placeholder</span>
+      </div>
+    </article>
+    <article class="demo-card">
+      <div class="video-frame">
+        <span class="demo-name">Do Puzzle</span>
+        <span class="demo-note">Demo video placeholder</span>
+      </div>
+    </article>
+    <article class="demo-card">
+      <div class="video-frame">
+        <span class="demo-name">Assembly #1</span>
+        <span class="demo-note">Demo video placeholder</span>
+      </div>
+    </article>
+    <article class="demo-card">
+      <div class="video-frame">
+        <span class="demo-name">Assembly #2</span>
+        <span class="demo-note">Demo video placeholder</span>
+      </div>
+    </article>
+  </div>
+
+  <figure class="task-figure">
+    <img src="assets/figures/task-settings.png" alt="Real and calibrated simulation workspaces for Test Tube Insertion, Do Puzzle, Assembly #1, and Assembly #2." loading="lazy">
+    <figcaption>Real and calibrated simulation workspaces for the four contact-rich bimanual tasks. The accumulated object placements indicate the pose ranges used for domain randomization and evaluation.</figcaption>
+  </figure>
+</section>
+
+<section id="method">
+  <span class="section-tag">Method</span>
+  <h2>A two-stage sim-to-real pipeline teaches touch to shape action chunks.</h2>
+  <p class="body-text">Our framework adapts a pretrained VLA policy to incorporate tactile feedback via a two-stage sim-to-real pipeline. Mixed sim-real co-training first initializes the pretrained policy with a tactile-conditioned action prior learned from both simulation and real-world expert rollouts. Sparse-reward reinforcement learning further refines the policy through interactive simulator rollouts, while real-data supervision regularizes the update toward the real-robot distribution.</p>
+
+  <figure class="teaser-figure">
+    <img src="assets/teaser/taccorl-teaser.png" alt="TacCoRL overview showing sim-real co-training, tactile-guided simulator reinforcement learning, and deployment across four tasks." loading="lazy">
+    <figcaption>We collect real and simulated visuo-tactile trajectories from aligned real and simulated setups, refine the tactile-conditioned policy in simulation, and deploy the resulting policy directly on the real robot.</figcaption>
+  </figure>
+
+  <div class="method-row">
+    <figure class="method-art">
+      <img src="assets/figures/taccorl-pipeline.png" alt="TacCoRL pipeline with data collection, sim-real co-training, and reinforcement learning fine-tuning." loading="lazy">
+    </figure>
+    <div class="method-copy">
+      <h3>Sim-real co-training initializes tactile-conditioned actions.</h3>
+      <p>Real demonstrations are paired with simulated teleoperation data and additional simulated trajectories synthesized under varied initial and object configurations. During co-training, tactile information is routed through contact-aware gating to modulate both the vision-language context and the action expert.</p>
+      <p>Co-training gives the policy a tactile-conditioned prior grounded in real observations, but it remains fixed-demonstration imitation. It aligns tactile observations with expert action chunks without yet exposing the policy to the consequences of its own contact responses.</p>
+    </div>
+  </div>
+
+  <div class="method-row method-row-flip">
+    <figure class="method-art">
+      <img src="assets/figures/robot-setup.png" alt="Bimanual robot setup with cameras and tactile sensing hardware." loading="lazy">
+    </figure>
+    <div class="method-copy">
+      <h3>Post-training uses simulator rollouts under a real-data anchor.</h3>
+      <p>After co-training, the policy is optimized using its own simulated contact rollouts under sparse task rewards. The actor observes language, images, proprioception, and tactile readings, while privileged simulator state is used only for reward and critic learning during training.</p>
+      <p>A supervised loss on real trajectories anchors the update to real observations and actions, reducing simulator-specific drift. After post-training, the critic, reward, and privileged state are discarded, and the final policy is deployed directly to the real robot.</p>
+    </div>
+  </div>
+</section>
+
+<section id="results">
+  <span class="section-tag">Results</span>
+  <h2>Tactile feedback improves simulator refinement and real-world transfer.</h2>
+  <p class="body-text">Direct reinforcement learning from the base VLA remains at 0.0% across all tasks in simulation, showing that sparse rewards alone cannot bootstrap the task sequence or precise contact corrections. Sim-real co-training changes the problem from exploration from scratch to policy refinement. After reinforcement learning, average simulator success increases from 60.5% for vision-only policies to 78.5% for visuo-tactile policies.</p>
+  <p class="body-text">On the real robot, tactile input raises the reinforcement-learning post-trained policy from 50.0% to 72.5% on average across the four tasks. The gains are especially clear when the grasped part or gripper occludes the target interface and the policy must use tactile changes to correct local contact errors through incremental translations and reorientations.</p>
+
+  <div class="metric-row">
+    <article class="metric-card">
+      <span class="metric-value">78.5%</span>
+      <p>average simulator success after tactile post-training</p>
+    </article>
+    <article class="metric-card">
+      <span class="metric-value">72.5%</span>
+      <p>average real success across four tasks</p>
+    </article>
+    <article class="metric-card">
+      <span class="metric-value">+22.5%</span>
+      <p>gain over the post-trained vision-only policy</p>
+    </article>
+  </div>
+
+  <figure class="wide-figure">
+    <div class="figure-shell pale-shell">
+      <img src="assets/figures/simulation-rl-curves.png" alt="Simulation success curves for vision-only and visuo-tactile policies across the four tasks." loading="lazy">
+    </div>
+    <figcaption>Simulator success rates during reinforcement learning updates for vision-only and visuo-tactile policies across the four tasks.</figcaption>
+  </figure>
+
+  <div class="table-wrap">
+    <h3>Real-World Success Rates</h3>
+    <table class="score-table">
+      <thead>
+        <tr>
+          <th rowspan="2">Training stage</th>
+          <th colspan="4">Vision-only</th>
+          <th colspan="4">Visuo-tactile</th>
+        </tr>
+        <tr>
+          <th>Tube</th>
+          <th>Puzzle</th>
+          <th>Asm. #1</th>
+          <th>Asm. #2</th>
+          <th>Tube</th>
+          <th>Puzzle</th>
+          <th>Asm. #1</th>
+          <th>Asm. #2</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th>Real-only fine-tuning</th>
+          <td>20%</td>
+          <td>5%</td>
+          <td>35%</td>
+          <td>25%</td>
+          <td>45%</td>
+          <td>15%</td>
+          <td>35%</td>
+          <td>40%</td>
+        </tr>
+        <tr>
+          <th>Sim-real co-training</th>
+          <td>35%</td>
+          <td>10%</td>
+          <td>40%</td>
+          <td>35%</td>
+          <td>50%</td>
+          <td>25%</td>
+          <td>45%</td>
+          <td>55%</td>
+        </tr>
+        <tr class="best-row">
+          <th>RL post-training</th>
+          <td>35%</td>
+          <td>25%</td>
+          <td>80%</td>
+          <td>60%</td>
+          <td>70%</td>
+          <td>45%</td>
+          <td>95%</td>
+          <td>80%</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="mobile-score-list">
+      <article>
+        <h4>Real-only fine-tuning</h4>
+        <div class="score-pairs">
+          <p><span>Tube</span><strong>20% / 45%</strong></p>
+          <p><span>Puzzle</span><strong>5% / 15%</strong></p>
+          <p><span>Asm. #1</span><strong>35% / 35%</strong></p>
+          <p><span>Asm. #2</span><strong>25% / 40%</strong></p>
+        </div>
+      </article>
+      <article>
+        <h4>Sim-real co-training</h4>
+        <div class="score-pairs">
+          <p><span>Tube</span><strong>35% / 50%</strong></p>
+          <p><span>Puzzle</span><strong>10% / 25%</strong></p>
+          <p><span>Asm. #1</span><strong>40% / 45%</strong></p>
+          <p><span>Asm. #2</span><strong>35% / 55%</strong></p>
+        </div>
+      </article>
+      <article>
+        <h4>RL post-training</h4>
+        <div class="score-pairs">
+          <p><span>Tube</span><strong>35% / 70%</strong></p>
+          <p><span>Puzzle</span><strong>25% / 45%</strong></p>
+          <p><span>Asm. #1</span><strong>80% / 95%</strong></p>
+          <p><span>Asm. #2</span><strong>60% / 80%</strong></p>
+        </div>
+      </article>
+      <p class="mobile-score-note">Each pair is vision-only / visuo-tactile.</p>
+    </div>
+  </div>
+</section>
+
+<section id="rollouts">
+  <span class="section-tag">Rollouts</span>
+  <h2>Transferred behavior appears after the contact interface becomes visually occluded.</h2>
+  <p class="body-text">After the grasped part or gripper occludes the mating interface, the post-trained policy uses tactile changes to make repeated small translations and reorientations instead of committing to a single visual pre-insertion pose. In the longer-horizon Do Puzzle task, reinforcement learning helps the policy complete all three placements rather than stopping after partial completion.</p>
+
+  <figure class="wide-figure">
+    <div class="figure-shell dark-shell">
+      <img src="assets/figures/real-rollouts.png" alt="Representative real robot executions across Test Tube Insertion, Do Puzzle, Assembly #1, and Assembly #2." loading="lazy">
+    </div>
+    <figcaption>Representative real-robot executions of the post-trained visuo-tactile policy across the four tasks.</figcaption>
+  </figure>
+
+  <figure class="wide-figure compact-figure">
+    <div class="figure-shell dark-shell">
+      <img src="assets/figures/failure-cases.png" alt="Representative baseline failures showing angle, position, direction, and pose errors." loading="lazy">
+    </div>
+    <figcaption>Representative baseline failures after occlusion. The failure cases expose missing corrective behavior in angle correction, lateral search, axis realignment, and center-of-mass support before release.</figcaption>
+  </figure>
+</section>
+
+<section id="analysis">
+  <span class="section-tag">Analysis</span>
+  <h2>Alignment and anchoring stabilize sim-to-real tactile post-training.</h2>
+  <p class="body-text">The study first validates the two policy-facing interfaces used for closed-loop contact learning: controller response and tactile readings. After controller system identification, the calibrated simulator closely matches the real trajectory and tracking error under the same command. Tactile calibration produces similar normalized tactile-reading distributions from matched real and simulated contact rollouts.</p>
+  <p class="body-text">Ablations then vary the co-training ratio and the real-data anchor. Lowering the simulated-data ratio from 0.95 to 0.5 improves both simulator success and real deployment, while adding a moderate real-data anchor raises real deployment from 45% to 80% on Assembly #2. An overly strong anchor reduces reward-driven contact correction.</p>
+
+  <div class="analysis-grid">
+    <figure class="figure-card">
+      <img src="assets/figures/controller-response.png" alt="Held-out J4 controller response replay comparing target, real, and simulated trajectories." loading="lazy">
+      <figcaption>Held-out J4 replay comparing target, real, and simulated responses before and after controller identification.</figcaption>
+    </figure>
+    <figure class="figure-card">
+      <img src="assets/figures/tactile-histogram.png" alt="Normalized tactile-reading histogram for matched real and simulated contact rollouts." loading="lazy">
+      <figcaption>Normalized tactile-reading distributions after tactile calibration.</figcaption>
+    </figure>
+  </div>
+
+  <figure class="wide-figure">
+    <div class="figure-shell pale-shell">
+      <img src="assets/figures/anchor-ablation.png" alt="Ablation of co-training ratio and real-data anchor on simulator success, anchor loss, and real deployment." loading="lazy">
+    </div>
+    <figcaption>Assembly #2 ablation of the co-training ratio and the real-data anchor across simulator success, supervised anchor loss, and real deployment.</figcaption>
+  </figure>
+</section>
+
+<section id="faq">
+  <span class="section-tag">FAQ</span>
+  <h2>Questions and answers.</h2>
+  <div class="faq-list">
+    <details class="faq-item">
+      <summary>What problem does TacCoRL address?</summary>
+      <div class="faq-answer">
+        <p>TacCoRL addresses contact-rich manipulation settings where visual observations alone often miss the local contact state required for insertion, assembly, and other tight-tolerance tasks.</p>
+      </div>
+    </details>
+    <details class="faq-item">
+      <summary>What is the main idea?</summary>
+      <div class="faq-answer">
+        <p>The main idea is not only adding touch as an input, but learning how contact readings should modulate action responses in near-failure states that are rare in demonstrations and risky to collect on hardware.</p>
+      </div>
+    </details>
+    <details class="faq-item">
+      <summary>What evidence supports the approach?</summary>
+      <div class="faq-answer">
+        <p>The study reports higher simulator success after tactile post-training and a final average real success rate of 72.5%, which exceeds the post-trained vision-only policy by 22.5% across the four tasks.</p>
+      </div>
+    </details>
+    <details class="faq-item">
+      <summary>What limitations remain?</summary>
+      <div class="faq-answer">
+        <p>The current system still benefits from deployment-time tactile hardware, a task-level digital twin, and careful alignment of scene geometry, cameras, controller response, and tactile statistics. The reported tasks focus on rigid or near-rigid contact interactions rather than highly deformable or fluid contact.</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<footer id="footer">
+  <div class="container">
+    <p>Anonymous submission, under review.</p>
+    <p>Website design adapted from the Gated Memory Policy project page.</p>
+  </div>
+</footer>
+
+<script src="main.js"></script>
+</body>
+</html>
