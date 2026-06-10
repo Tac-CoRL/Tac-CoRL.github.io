@@ -1,0 +1,10 @@
+TacCoRL_26/
+.reference-gated-memory-policy/
+node_modules/
+*.log
+.DS_Store
+/taccorl-*.png
+/gmp-*.png
+/experiments/
+/assets/videos/final_1212_200mb.mp4
+/assets/videos/experiments/ablation/*.mp4

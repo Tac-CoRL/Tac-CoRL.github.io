@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TacCoRL</title>
+  <meta name="description" content="TacCoRL">
+  <link rel="stylesheet" href="style.css?v=20260610">
+</head>
+<body>
+<nav id="toc-nav" aria-label="Page sections">
+  <div class="toc-inner">
+    <p class="toc-title">On This Page</p>
+    <a class="toc-link" href="#overview">Overview</a>
+    <a class="toc-link" href="#summaryvideo">Summary Video</a>
+    <a class="toc-link" href="#method">Method</a>
+    <a class="toc-link" href="#experiments">Experiments</a>
+    <div class="toc-subgroup" aria-label="Experiments subsections">
+      <a class="toc-link toc-link-sub" href="#representative-tube-rollout">Representative Case</a>
+      <a class="toc-link toc-link-sub" href="#real-world-rollouts">Real-World Rollouts</a>
+      <a class="toc-link toc-link-sub" href="#task-by-task-comparison">Comparison with Baselines</a>
+      <a class="toc-link toc-link-sub" href="#results-analysis-details">Numerical Analysis</a>
+      <a class="toc-link toc-link-sub" href="#controller-tactile-alignment">Sim2Real Alignment</a>
+    </div>
+  </div>
+</nav>
+
+<header id="hero-title">
+  <div class="hero-copy">
+    <h1 class="title-line">
+      <span class="title-main">
+        <span class="title-line-part"><span class="title-tac">Tac</span>Co<span class="title-rl">RL</span>: Integrating Tactile</span>
+        <span class="title-line-part">Feedback into VLA via Simulation</span>
+      </span>
+    </h1>
+    <p class="hero-tagline">Anonymous</p>
+
+    <div class="hero-actions" aria-label="Project links">
+      <a class="hero-action-btn" href="assets/TacCoRL_26_0608.pdf" target="_blank" rel="noopener" aria-label="Open TacCoRL paper PDF in a new tab">
+        <svg class="hero-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z"/>
+          <path d="M14 2v5h5"/>
+          <path d="M9 13h6"/>
+          <path d="M9 17h6"/>
+        </svg>
+        <span>Paper</span>
+      </a>
+      <a class="hero-action-btn" href="#summaryvideo" aria-label="Jump to the TacCoRL summary video section">
+        <svg class="hero-action-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M8 5.5v13l10-6.5z"/>
+        </svg>
+        <span>Video</span>
+      </a>
+    </div>
+  </div>
+
+  <figure class="hero-media-wrap">
+    <div class="hero-media-card">
+      <video class="hero-video" muted autoplay loop playsinline preload="metadata" aria-label="TacCoRL hero video montage">
+        <source data-src="assets/videos/hero/1_puzzle_best_sim_tube_grid_14s.mp4" type="video/mp4">
+      </video>
+    </div>
+    <figcaption class="media-caption">TacCoRL puzzle, simulation, and tube rollout montage.</figcaption>
+  </figure>
+</header>
+
+<main>
+  <section id="overview">
+    <span class="section-tag">Overview</span>
+    <p>Vision-language-action (VLA) models provide strong visual, language, and action priors for robot manipulation, but visual observations alone often miss the local contact state required for contact-rich tasks. We present <em class="term-emphasis"><span class="term-tac">Tac</span>Co<span class="term-rl">RL</span></em>, a scalable framework that injects <em class="term-emphasis"><span class="term-tac">Tactile</span></em> feedback into VLA policies and improves them through <em class="term-emphasis term-neutral">sim-real Co-training</em> and simulation-based <em class="term-emphasis"><span class="term-rl">Reinforcement Learning (RL)</span></em>, without requiring large-scale tactile pretraining or extensive real-world contact exploration. The key idea is not only adding touch as an input, but learning how contact readings should modulate action responses in near-failure states that are rare in demonstrations and risky to collect on hardware. We use a real-aligned simulation as a closed-loop training environment for contact interaction. Mixed simulated and real trajectories first warm-start tactile-conditioned actions in the pretrained policy. Reinforcement learning with verifiable task rewards then optimizes the policy using simulated contact rollouts. It reinforces tactile-conditioned actions that lead to task completion, while a supervised objective on real trajectories keeps the refined policy anchored to deployment visual, tactile, and action distributions. The resulting policy transfers directly to the real robot without privileged simulation state or online real-world RL. Across four bimanual contact-rich tasks, the final visuo-tactile policy achieves an average success rate of 72.5%, compared to baseline of 50.0%.</p>
+    <figure class="paper-preview-figure">
+      <a class="paper-preview-link" href="assets/TacCoRL_26_0608.pdf" target="_blank" rel="noopener" aria-label="Open TacCoRL paper PDF">
+        <span class="paper-preview-strip" aria-hidden="true">
+          <img src="assets/figures/taccorl-paper-preview/page-01.png" alt="" loading="lazy" decoding="async">
+          <img src="assets/figures/taccorl-paper-preview/page-02.png" alt="" loading="lazy" decoding="async">
+          <img src="assets/figures/taccorl-paper-preview/page-03.png" alt="" loading="lazy" decoding="async">
+          <img src="assets/figures/taccorl-paper-preview/page-04.png" alt="" loading="lazy" decoding="async">
+          <img src="assets/figures/taccorl-paper-preview/page-05.png" alt="" loading="lazy" decoding="async">
+          <img src="assets/figures/taccorl-paper-preview/page-06.png" alt="" loading="lazy" decoding="async">
+          <img src="assets/figures/taccorl-paper-preview/page-07.png" alt="" loading="lazy" decoding="async">
+          <img src="assets/figures/taccorl-paper-preview/page-08.png" alt="" loading="lazy" decoding="async">
+        </span>
+      </a>
+    </figure>
+  </section>
+
+  <section id="summaryvideo">
+    <span class="section-tag">Summary Video</span>
+    
+    <figure class="summary-video-shell">
+      <video class="summary-video" controls preload="none" playsinline aria-label="3-minute TacCoRL overview video">
+        <source data-src="assets/videos/experiments_compressed/final_1212_100mb.mp4" type="video/mp4">
+      </video>
+        </figure>
+  </section>
+
+  <section id="method">
+    <span class="section-tag">Method</span>
+    <figure class="method-pipeline-figure" id="method-pipeline">
+      <img src="assets/figures/taccorl-pipeline.png" alt="Complete TacCoRL pipeline showing data collection, sim-real co-training, and simulation reinforcement-learning refinement." loading="lazy" decoding="async">
+    </figure>
+
+    <div class="method-stage-row">
+      <article class="method-block method-stage-summary" id="method-data-collection">
+        <header class="method-block-header">
+        </header>
+        <div class="method-block-copy">
+          <p>We collect minimal real demonstrations together with simulated data, then further scale up the simulated set using MimicGen to increase trajectory diversity.</p>
+        </div>
+      </article>
+
+      <article class="method-block method-stage-summary" id="method-sim-real-refinement">
+        <header class="method-block-header">
+          <!-- <span class="method-block-eyebrow">STAGE 2</span>
+          <h3 class="method-block-title">SIM-REAL CO-TRAINING</h3> -->
+        </header>
+        <div class="method-block-copy">
+          <p>We warm-start the policy via mixed supervised co-training. Tactile information is encoded and routed through contact-aware gating to modulate
+both VLM and the action expert.  Co-training provides the policy with <em class="term-emphasis"><span class="term-tac">a tactile-conditioned prior and offers RL a viable initialization for refining contact behavior</span></em>.</p>
+        </div>
+      </article>
+
+      <article class="method-block method-stage-summary" id="method-simulation-rl">
+        <header class="method-block-header">
+        </header>
+        <div class="method-block-copy">
+          <p> <em class="term-emphasis"><span class="term-rl">Sparse-reward RL uses simulation rollouts to learn tactile-conditioned corrections</span></em>. A supervised real-data loss keeps these updates anchored to the real deployment distribution.</p>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section id="experiments">
+    <span class="section-tag">Experiments</span>
+    <article class="experiment-block representative-tube-section" id="representative-tube-rollout">
+        <header class="experiment-block-header">
+          <span class="results-eyebrow">Representative Case</span>
+          <p>Across four trials with randomized tube poses, visual occlusion hides contact. Our method uses tactile feedback for closed-loop translation and reorientation, recovering near-failures and improving insertion accuracy.</p>
+        </header>
+
+        <figure class="simulation-rl-video-figure">
+          <div class="simulation-rl-video-shell">
+            <video class="simulation-rl-video" muted autoplay loop playsinline controls preload="metadata" aria-label="Representative Test Tube Insertion rollout">
+              <source data-src="assets/videos/representive_tube_4.mp4" type="video/mp4">
+            </video>
+          </div>
+        </figure>
+      </article>
+
+    <article class="experiment-block real-rollout-overview" id="real-world-rollouts">
+      <header class="experiment-block-header real-rollout-overview-header">
+        <span class="results-eyebrow">REAL-WORLD ROLLOUTS</span>
+        <h3>Representative real-robot executions of our policy across four contact-rich bimanual tasks.</h3>
+      </header>
+
+      <figure class="real-rollout-video-figure">
+        <div class="real-rollout-video-shell real-rollout-video-shell--labeled">
+          <video class="real-rollout-video" muted autoplay loop playsinline controls preload="metadata" data-video-role="real-rollout-overview" aria-label="">
+            <source data-src="assets/videos/experiments_compressed/rollouts.mp4" type="video/mp4">
+          </video>
+          
+        </div>
+      </figure>
+    </article>
+
+
+    <article class="task-explorer" id="task-by-task-comparison">
+      <div class="task-explorer-head">
+        <div class="task-explorer-copy">
+          <span class="results-eyebrow">Comparison with Baselines</span>
+          <div class="task-selector" data-task-selector role="tablist" aria-label="Task comparison selector">
+            <button class="task-selector-btn active" type="button" role="tab" id="task-tab-tube" aria-controls="task-panel-tube" aria-selected="true" tabindex="0" data-task="tube">Tube Insertion</button>
+            <button class="task-selector-btn" type="button" role="tab" id="task-tab-puzzle" aria-controls="task-panel-puzzle" aria-selected="false" tabindex="-1" data-task="puzzle">Do Puzzle</button>
+            <button class="task-selector-btn" type="button" role="tab" id="task-tab-assembly-1" aria-controls="task-panel-assembly-1" aria-selected="false" tabindex="-1" data-task="assembly-1">Assembly #1</button>
+            <button class="task-selector-btn" type="button" role="tab" id="task-tab-assembly-2" aria-controls="task-panel-assembly-2" aria-selected="false" tabindex="-1" data-task="assembly-2">Assembly #2</button>
+          </div>
+          <p>After contact, the gripper or held object often occludes the rim, puzzle opening, or mating edge while residual pose errors remain. Our method combines tactile histories with sim-real co-training and simulator RL fine-tuning to convert hidden contact states into closed-loop corrections.</p>
+        </div>
+        <div class="task-explorer-chart" aria-label="Selected task real-world success rates">
+          <div class="task-score-card" data-task-chart>
+            <div class="task-score-card-head">
+              <span class="task-score-card-eyebrow">Success Rates</span>
+              <strong class="task-score-card-title" data-task-chart-title>Tube Insertion</strong>
+            </div>
+            <div class="task-score-bar task-score-bar--no-tactile" style="--score: 35;" aria-label="Without tactile real-world success 35 percent">
+              <span class="task-score-bar-value">35%</span>
+              <span class="task-score-bar-label">w/o Touch</span>
+            </div>
+            <div class="task-score-bar task-score-bar--no-rl" style="--score: 50;" aria-label="Without reinforcement-learning post-training real-world success 50 percent">
+              <span class="task-score-bar-value">50%</span>
+              <span class="task-score-bar-label">w/o Sim Fine-Tuning</span>
+            </div>
+            <div class="task-score-bar task-score-bar--ours" style="--score: 70;" aria-label="TacCoRL real-world success 70 percent">
+              <span class="task-score-bar-value">70%</span>
+              <span class="task-score-bar-label">Ours</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-panel active" id="task-panel-tube" role="tabpanel" aria-labelledby="task-tab-tube" data-task-panel="tube">
+        <div class="task-rollout-grid">
+          <article class="task-rollout-column">
+            <h4 class="task-rollout-label">w/o Touch</h4>
+            <div class="task-rollout-media">
+              <video class="task-ablation-video" muted autoplay loop playsinline controls preload="metadata" aria-label="Test Tube Insertion rollout without tactile feedback">
+                <source data-src="assets/videos/experiments_compressed/ablation/ablation_tube_wo_Touch.mp4" type="video/mp4">
+              </video>
+            </div>
+            <p class="task-rollout-subtitle">Failed to Adjust Angle due to Occlusion</p>
+          </article>
+          <article class="task-rollout-column">
+            <h4 class="task-rollout-label">w/o Sim Fine-Tuning</h4>
+            <div class="task-rollout-media">
+              <video class="task-ablation-video" muted autoplay loop playsinline controls preload="metadata" aria-label="Test Tube Insertion rollout without RL post-training">
+                <source data-src="assets/videos/experiments_compressed/ablation/ablation_tube_wo_rl_post_training.mp4" type="video/mp4">
+              </video>
+            </div>
+            <p class="task-rollout-subtitle">Failed to Re-Align Insertion Direction</p>
+          </article>
+          <article class="task-rollout-column">
+            <h4 class="task-rollout-label">Ours</h4>
+            <div class="task-rollout-media">
+              <video class="task-ablation-video" muted autoplay loop playsinline controls preload="metadata" aria-label="Test Tube Insertion TacCoRL rollout">
+                <source data-src="assets/videos/experiments_compressed/ablation/ablation_tube_ours.mp4" type="video/mp4">
+              </video>
+            </div>
+            <p class="task-rollout-subtitle">Accurate Insertion with In-Hand Adjustment</p>
+          </article>
+        </div>
+      </div>
+
+      <div class="task-panel" id="task-panel-puzzle" role="tabpanel" aria-labelledby="task-tab-puzzle" data-task-panel="puzzle" hidden>
+        <div class="task-rollout-grid">
+          <article class="task-rollout-column">
+            <h4 class="task-rollout-label">w/o Touch</h4>
+            <div class="task-rollout-media">
+              <video class="task-ablation-video" muted autoplay loop playsinline controls preload="metadata" aria-label="Do Puzzle rollout without tactile feedback">
+                <source data-src="assets/videos/experiments_compressed/ablation/puzzle_wo_touch_fail_0tactile_2.mp4" type="video/mp4">
+              </video>
+            </div>
+            <p class="task-rollout-subtitle">Incorrect Insertion Direction</p>
+          </article>
+          <article class="task-rollout-column">
+            <h4 class="task-rollout-label">w/o Sim Fine-Tuning</h4>
+            <div class="task-rollout-media">
+              <video class="task-ablation-video" muted autoplay loop playsinline controls preload="metadata" aria-label="Do Puzzle rollout without RL post-training">
+                <source data-src="assets/videos/experiments_compressed/ablation/puzzle_wo_sim_fine_tuning_1_5success_1.mp4" type="video/mp4">
+              </video>
+            </div>
+            <p class="task-rollout-subtitle">Failed to Adjust Insertion Pose</p>
+          </article>
+          <article class="task-rollout-column">
+            <h4 class="task-rollout-label">Ours</h4>
+            <div class="task-rollout-media">
+              <video class="task-ablation-video" muted autoplay loop playsinline controls preload="metadata" aria-label="Do Puzzle TacCoRL rollout">
+                <source data-src="assets/videos/experiments_compressed/ablation/puzzle_ours_success_3.mp4" type="video/mp4">
+              </video>
+            </div>
+            <p class="task-rollout-subtitle">Accurate Insertion with In-Hand Adjustment</p>
+          </article>
+        </div>
+      </div>
+
+      <div class="task-panel" id="task-panel-assembly-1" role="tabpanel" aria-labelledby="task-tab-assembly-1" data-task-panel="assembly-1" hidden>
+        <div class="task-rollout-grid">
+          <article class="task-rollout-column">
+            <h4 class="task-rollout-label">w/o Touch</h4>
+            <div class="task-rollout-media">
+              <video class="task-ablation-video" muted autoplay loop playsinline controls preload="metadata" aria-label="Assembly #1 rollout without tactile feedback">
+                <source data-src="assets/videos/experiments_compressed/ablation/pink_wo_touch_1.mp4" type="video/mp4">
+              </video>
+            </div>
+            <p class="task-rollout-subtitle">Failed Without Tactile Feedback</p>
+          </article>
+          <article class="task-rollout-column">
+            <h4 class="task-rollout-label">w/o Sim Fine-Tuning</h4>
+            <div class="task-rollout-media">
+              <video class="task-ablation-video" muted autoplay loop playsinline controls preload="metadata" aria-label="Assembly #1 rollout without RL post-training">
+                <source data-src="assets/videos/experiments_compressed/ablation/pink_wosimft.mp4" type="video/mp4">
+              </video>
+            </div>
+            <p class="task-rollout-subtitle">Incorrect Insertion Pose</p>
+          </article>
+          <article class="task-rollout-column">
+            <h4 class="task-rollout-label">Ours</h4>
+            <div class="task-rollout-media">
+              <video class="task-ablation-video" muted autoplay loop playsinline controls preload="metadata" aria-label="Assembly #1 TacCoRL rollout">
+                <source data-src="assets/videos/experiments_compressed/ablation/pink_ours.mp4" type="video/mp4">
+              </video>
+            </div>
+            <p class="task-rollout-subtitle">Accurate Insertion with In-Hand Adjustment</p>
+          </article>
+        </div>
+      </div>
+
+      <div class="task-panel" id="task-panel-assembly-2" role="tabpanel" aria-labelledby="task-tab-assembly-2" data-task-panel="assembly-2" hidden>
+        <div class="task-rollout-grid">
+          <article class="task-rollout-column">
+            <h4 class="task-rollout-label">w/o Touch</h4>
+            <div class="task-rollout-media">
+              <video class="task-ablation-video" muted autoplay loop playsinline controls preload="metadata" aria-label="Assembly #2 rollout without RL post-training">
+                <source data-src="assets/videos/experiments_compressed/ablation/blue_wotactile_1.mp4" type="video/mp4">
+              </video>
+            </div>
+            <p class="task-rollout-subtitle">Failed to Adjust Angle due to Occlusion</p>
+          </article>
+          <article class="task-rollout-column">
+            <h4 class="task-rollout-label">w/o Sim Fine-Tuning</h4>
+            <div class="task-rollout-media">
+              <video class="task-ablation-video" muted autoplay loop playsinline controls preload="metadata" aria-label="Assembly #2 rollout without RL post-training">
+                <source data-src="assets/videos/experiments_compressed/ablation/blue_wo_sim_fine_tuning_1.mp4" type="video/mp4">
+              </video>
+            </div>
+            <p class="task-rollout-subtitle">Incorrect Insertion Direction</p>
+          </article>
+          <article class="task-rollout-column">
+            <h4 class="task-rollout-label">Ours</h4>
+            <div class="task-rollout-media">
+              <video class="task-ablation-video" muted autoplay loop playsinline controls preload="metadata" aria-label="Assembly #2 TacCoRL rollout">
+                <source data-src="assets/videos/experiments_compressed/ablation/blue_nut_ours_success_2.mp4" type="video/mp4">
+              </video>
+            </div>
+            <p class="task-rollout-subtitle">Accurate Insertion with In-Hand Adjustment</p>
+          </article>
+        </div>
+      </div>
+
+    </article>
+
+    <article class="experiment-block simreal-alignment-section">
+      <header class="experiment-block-header" id="controller-tactile-alignment">
+        <span class="results-eyebrow">Sim2Real Alignment</span>
+      </header>
+
+      <p class="body-text">Left shows the held-out J4 replay, where gravity compensation caused the largest calibration gap; after SysID, simulation matches real tracking. Right shows aligned tactile distributions from matched rollouts, supporting simulator post-training.</p>
+      
+
+      <figure class="alignment-summary-card alignment-summary-card--combined">
+        <div class="alignment-summary-grid">
+          <div class="alignment-summary-image">
+            <img src="assets/figures/controller-response.png" loading="lazy" decoding="async">
+          </div>
+          <div class="alignment-summary-image">
+            <img src="assets/figures/tactile-histogram.png" loading="lazy" decoding="async">
+          </div>
+        </div>
+        <p>Controller and Tactile Alignment</p>
+      </figure>
+
+      <details class="calibration-details" id="calibration-details">
+        <summary>View sim-to-real calibration details</summary>
+        <div class="calibration-details-body">
+          <div class="calibration-tabs" role="tablist" aria-label="Calibration detail figures">
+            <button class="calibration-tab-btn active" type="button" role="tab" id="calibration-tab-controller" aria-controls="calibration-panel-controller" aria-selected="true" tabindex="0" data-calibration-tab="controller">Controller SysID</button>
+            <button class="calibration-tab-btn" type="button" role="tab" id="calibration-tab-tactile" aria-controls="calibration-panel-tactile" aria-selected="false" tabindex="-1" data-calibration-tab="tactile">Tactile Alignment</button>
+            <button class="calibration-tab-btn" type="button" role="tab" id="calibration-tab-camera" aria-controls="calibration-panel-camera" aria-selected="false" tabindex="-1" data-calibration-tab="camera">Camera Alignment</button>
+          </div>
+
+          <section class="calibration-tab-panel active" id="calibration-panel-controller" role="tabpanel" aria-labelledby="calibration-tab-controller" data-calibration-panel="controller">
+            <div class="calibration-panel">
+              <figure>
+                <img class="calibration-panel-image" data-src="assets/figures/appendix_joint_response_j0_j5_2x3.png" alt="Per-joint controller system-identification results for joints J0 through J5, comparing target, real, baseline simulation, and calibrated simulation responses." loading="lazy" decoding="async">
+                <figcaption>Full per-joint controller SysID results.</figcaption>
+              </figure>
+            </div>
+          </section>
+
+          <section class="calibration-tab-panel" id="calibration-panel-tactile" role="tabpanel" aria-labelledby="calibration-tab-tactile" data-calibration-panel="tactile" hidden>
+            <div class="calibration-panel">
+              <figure>
+                <img class="calibration-panel-image" data-src="assets/figures/tactile_signal_alignment.png" alt="Synchronized real-to-simulation tactile replay frames showing matched contact locations and tactile-map evolution during assembly tasks." loading="lazy" decoding="async">
+                <figcaption>Synchronized sim-to-real tactile replay trajectories with tactile signal.</figcaption>
+              </figure>
+            </div>
+          </section>
+
+          <section class="calibration-tab-panel" id="calibration-panel-camera" role="tabpanel" aria-labelledby="calibration-tab-camera" data-calibration-panel="camera" hidden>
+            <div class="calibration-panel">
+              <figure>
+                <img class="calibration-panel-image" data-src="assets/figures/camera_calibration.png" alt="Simulation, real, and overlaid camera views after camera extrinsic calibration across initial, grasp, and insertion stages." loading="lazy" decoding="async">
+                <figcaption>Sim-to-real camera alignment after extrinsic calibration.</figcaption>
+              </figure>
+            </div>
+          </section>
+        </div>
+      </details>
+
+      
+
+      <article class="experiment-block numerical-analysis-section" id="results-analysis-details">
+        <header class="experiment-block-header">
+          <span class="results-eyebrow">Numerical Analysis</span>
+        </header>
+        <div class="numerical-analysis-body">
+          <section class="analysis-section">
+            <p>Across all tasks, visuo-tactile policies consistently achieve higher success rates than vision-only policies during simulator RL. This indicates that tactile histories remain useful during on-policy refinement, rather than serving solely as an additional imitation-learning input.</p>
+            <figure class="wide-figure figure-with-caption">
+              <div class="figure-shell pale-shell">
+                <img src="assets/figures/simulation-rl-curves.png" loading="lazy" decoding="async">
+              </div>
+              <h3>Tactile Feedback Improves Simulator RL</h3>
+            </figure>
+          </section>
+
+          <section class="analysis-section">
+            <p>We vary the co-training ratio α and real-anchor weight β on the Assembly #2 task and report model performance in terms of simulator success rate, real-data anchor loss, which measures policy deviation from real demonstrations during simulation, and real-world deployment success rate.</p>
+            <figure class="wide-figure figure-with-caption">
+              <div class="figure-shell pale-shell">
+                <img src="assets/figures/anchor-ablation.png" alt="Assembly #2 ablation of co-training ratio and real-data anchor weight, showing simulation success, anchor loss, and real-world deployment success." loading="lazy" decoding="async">
+              </div>
+              <h3>Ablation of Co-Training and Real-Data Anchoring</h3>
+            </figure>
+          </section>
+
+          <section class="analysis-section">
+            <p>Direct RL from the base VLA model fails across all tasks. Sim-real co-training provides a strong initialization and substantially improves the success rate for simulator-based RL. Incorporating tactile feedback further improves policy performance.</p>
+            <div class="table-wrap">
+              <table class="score-table">
+                <thead>
+                  <tr>
+                    <th rowspan="2">Settings</th>
+                    <th colspan="4">Vision-Only</th>
+                    <th colspan="4">Visuo-Tactile</th>
+                  </tr>
+                  <tr>
+                    <th>Tube</th>
+                    <th>Puzzle</th>
+                    <th>Asm. #1</th>
+                    <th>Asm. #2</th>
+                    <th>Tube</th>
+                    <th>Puzzle</th>
+                    <th>Asm. #1</th>
+                    <th>Asm. #2</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <th>After Co-Training</th>
+                    <td>42%</td><td>12%</td><td>39%</td><td>39%</td>
+                    <td>41%</td><td>16%</td><td>47%</td><td>58%</td>
+                  </tr>
+                  <tr>
+                    <th>RL Start with Exploration Noise</th>
+                    <td>35%</td><td>5%</td><td>25%</td><td>25%</td>
+                    <td>36%</td><td>4%</td><td>35%</td><td>42%</td>
+                  </tr>
+                  <tr>
+                    <th>RL from Base VLA</th>
+                    <td>0%</td><td>0%</td><td>0%</td><td>0%</td>
+                    <td>0%</td><td>0%</td><td>0%</td><td>0%</td>
+                  </tr>
+                  <tr class="best-row">
+                    <th>RL with Co-Training</th>
+                    <td>50%</td><td>54%</td><td>77%</td><td>61%</td>
+                    <td><strong>72%</strong></td><td><strong>71%</strong></td><td><strong>92%</strong></td><td><strong>79%</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+              <h3>Simulation Success Rates</h3>
+            </div>
+          </section>
+
+          <section class="analysis-section">
+            <p>Rows compare training stages; columns compare vision-only and visuo-tactile policies. Tactile feedback and RL post-training together achieve the highest real-world success rates.</p>
+            <div class="table-wrap">
+              <table class="score-table">
+                <thead>
+                  <tr>
+                    <th rowspan="2">Training Stage</th>
+                    <th colspan="4">Vision-Only</th>
+                    <th colspan="4">Visuo-Tactile</th>
+                  </tr>
+                  <tr>
+                    <th>Tube</th>
+                    <th>Puzzle</th>
+                    <th>Asm. #1</th>
+                    <th>Asm. #2</th>
+                    <th>Tube</th>
+                    <th>Puzzle</th>
+                    <th>Asm. #1</th>
+                    <th>Asm. #2</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <th>Real-Only Fine-Tuning</th>
+                    <td>20%</td><td>5%</td><td>35%</td><td>25%</td>
+                    <td>45%</td><td>15%</td><td>35%</td><td>40%</td>
+                  </tr>
+                  <tr>
+                    <th>Sim-Real Co-Training</th>
+                    <td>35%</td><td>10%</td><td>40%</td><td>35%</td>
+                    <td>50%</td><td>25%</td><td>45%</td><td>55%</td>
+                  </tr>
+                  <tr class="best-row">
+                    <th>RL Post-Training</th>
+                    <td>35%</td><td>25%</td><td>80%</td><td>60%</td>
+                    <td><strong>70%</strong></td><td><strong>45%</strong></td><td><strong>95%</strong></td><td><strong>80%</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+              <h3>Real-World Success Rates</h3>
+            </div>
+          </section>
+        </div>
+      </article>
+    </article>
+  </section>
+</main>
+
+<footer id="footer">
+  <div class="container">
+  </div>
+</footer>
+
+<script src="main.js?v=20260610"></script>
+</body>
+</html>
