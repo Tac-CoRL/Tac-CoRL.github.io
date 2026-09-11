@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TacCoRL</title>
   <meta name="description" content="TacCoRL">
-  <link rel="stylesheet" href="style.css?v=20260610">
+  <link rel="stylesheet" href="style.css?v=20260911o">
 </head>
 <body>
 <nav id="toc-nav" aria-label="Page sections">
-  <div class="toc-inner">
+  <div class="toc-inner" id="toc-panel">
     <p class="toc-title">On This Page</p>
     <a class="toc-link" href="#overview">Overview</a>
     <a class="toc-link" href="#summaryvideo">Summary Video</a>
@@ -18,11 +18,16 @@
     <div class="toc-subgroup" aria-label="Experiments subsections">
       <a class="toc-link toc-link-sub" href="#representative-tube-rollout">Representative Case</a>
       <a class="toc-link toc-link-sub" href="#real-world-rollouts">Real-World Rollouts</a>
-      <a class="toc-link toc-link-sub" href="#task-by-task-comparison">Comparison with Baselines</a>
+      <a class="toc-link toc-link-sub" href="#task-by-task-comparison">Comparison</a>
       <a class="toc-link toc-link-sub" href="#results-analysis-details">Numerical Analysis</a>
       <a class="toc-link toc-link-sub" href="#controller-tactile-alignment">Sim2Real Alignment</a>
     </div>
   </div>
+  <button class="toc-toggle" type="button" aria-controls="toc-panel" aria-expanded="true" aria-label="Hide table of contents">
+    <svg class="toc-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="m15 18-6-6 6-6"/>
+    </svg>
+  </button>
 </nav>
 
 <header id="hero-title">
@@ -33,10 +38,34 @@
         <span class="title-line-part">Feedback into VLA via Simulation</span>
       </span>
     </h1>
-    <p class="hero-tagline">Anonymous</p>
+    <p class="hero-venue">Conference on Robot Learning(CoRL) 2026</p>
+
+    <p class="hero-authors" aria-label="Authors">
+      <a class="hero-author-link" href="https://bell0o.github.io/" target="_blank" rel="noopener" aria-label="Siyu Ma's personal homepage">Siyu Ma<sup>1,2*</sup></a>,
+      <a class="hero-author-link" href="https://yuqiliang1.github.io/" target="_blank" rel="noopener" aria-label="Yuqi Liang's personal homepage">Yuqi Liang<sup>1,3*</sup></a>,
+      <a class="hero-author-link" href="https://changyu.io/" target="_blank" rel="noopener" aria-label="Chang Yu's personal homepage">Chang Yu<sup>1*†</sup></a>,
+      <a class="hero-author-link" href="https://yunuoch.github.io/" target="_blank" rel="noopener" aria-label="Yunuo Chen's personal homepage">Yunuo Chen<sup>1</sup></a>,
+      <a class="hero-author-link" href="https://www.haosu.ai/" target="_blank" rel="noopener" aria-label="Hao Su's personal homepage">Hao Su<sup>2</sup></a>,
+      <a class="hero-author-link" href="https://yzhu.io/" target="_blank" rel="noopener" aria-label="Yixin Zhu's personal homepage">Yixin Zhu<sup>4</sup></a>,
+      <a class="hero-author-link" href="https://yangzzzy.github.io/" target="_blank" rel="noopener" aria-label="Yin Yang's personal homepage">Yin Yang<sup>5</sup></a>,
+      <a class="hero-author-link" href="https://www.math.ucla.edu/~cffjiang/" target="_blank" rel="noopener" aria-label="Chenfanfu Jiang's personal homepage">Chenfanfu Jiang<sup>1</sup></a>.
+    </p>
+
+    <div class="hero-affiliations" aria-label="Author affiliations">
+      <div class="hero-affiliation-row">
+        <span><sup>1</sup> University of California, Los Angeles</span>
+        <span><sup>2</sup> University of California, San Diego</span>
+      </div>
+      <div class="hero-affiliation-row">
+        <span><sup>3</sup> University of Electronic Science and Technology of China</span>
+        <span><sup>4</sup> Peking University</span>
+        <span><sup>5</sup> University of Utah</span>
+      </div>
+    </div>
+    <p class="hero-author-notes"><span><sup>*</sup> Equal contributions.</span><span><sup>†</sup> Project lead.</span></p>
 
     <div class="hero-actions" aria-label="Project links">
-      <a class="hero-action-btn" href="assets/TacCoRL_26_0608.pdf" target="_blank" rel="noopener" aria-label="Open TacCoRL paper PDF in a new tab">
+      <a class="hero-action-btn" href="assets/TacCoRL_260911.pdf" target="_blank" rel="noopener" aria-label="Open TacCoRL paper PDF in a new tab">
         <svg class="hero-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z"/>
           <path d="M14 2v5h5"/>
@@ -69,16 +98,16 @@
     <span class="section-tag">Overview</span>
     <p>Vision-language-action (VLA) models provide strong visual, language, and action priors for robot manipulation, but visual observations alone often miss the local contact state required for contact-rich tasks. We present <em class="term-emphasis"><span class="term-tac">Tac</span>Co<span class="term-rl">RL</span></em>, a scalable framework that injects <em class="term-emphasis"><span class="term-tac">Tactile</span></em> feedback into VLA policies and improves them through <em class="term-emphasis term-neutral">sim-real Co-training</em> and simulation-based <em class="term-emphasis"><span class="term-rl">Reinforcement Learning (RL)</span></em>, without requiring large-scale tactile pretraining or extensive real-world contact exploration. The key idea is not only adding touch as an input, but learning how contact readings should modulate action responses in near-failure states that are rare in demonstrations and risky to collect on hardware. We use a real-aligned simulation as a closed-loop training environment for contact interaction. Mixed simulated and real trajectories first warm-start tactile-conditioned actions in the pretrained policy. Reinforcement learning with verifiable task rewards then optimizes the policy using simulated contact rollouts. It reinforces tactile-conditioned actions that lead to task completion, while a supervised objective on real trajectories keeps the refined policy anchored to deployment visual, tactile, and action distributions. The resulting policy transfers directly to the real robot without privileged simulation state or online real-world RL. Across four bimanual contact-rich tasks, the final visuo-tactile policy achieves an average success rate of 72.5%, compared to baseline of 50.0%.</p>
     <figure class="paper-preview-figure">
-      <a class="paper-preview-link" href="assets/TacCoRL_26_0608.pdf" target="_blank" rel="noopener" aria-label="Open TacCoRL paper PDF">
+      <a class="paper-preview-link" href="assets/TacCoRL_260911.pdf" target="_blank" rel="noopener" aria-label="Open TacCoRL paper PDF">
         <span class="paper-preview-strip" aria-hidden="true">
-          <img src="assets/figures/taccorl-paper-preview/page-01.png" alt="" loading="lazy" decoding="async">
-          <img src="assets/figures/taccorl-paper-preview/page-02.png" alt="" loading="lazy" decoding="async">
-          <img src="assets/figures/taccorl-paper-preview/page-03.png" alt="" loading="lazy" decoding="async">
-          <img src="assets/figures/taccorl-paper-preview/page-04.png" alt="" loading="lazy" decoding="async">
-          <img src="assets/figures/taccorl-paper-preview/page-05.png" alt="" loading="lazy" decoding="async">
-          <img src="assets/figures/taccorl-paper-preview/page-06.png" alt="" loading="lazy" decoding="async">
-          <img src="assets/figures/taccorl-paper-preview/page-07.png" alt="" loading="lazy" decoding="async">
-          <img src="assets/figures/taccorl-paper-preview/page-08.png" alt="" loading="lazy" decoding="async">
+          <img src="assets/figures/taccorl-paper-preview/page-01.png?v=20260911" alt="" loading="lazy" decoding="async">
+          <img src="assets/figures/taccorl-paper-preview/page-02.png?v=20260911" alt="" loading="lazy" decoding="async">
+          <img src="assets/figures/taccorl-paper-preview/page-03.png?v=20260911" alt="" loading="lazy" decoding="async">
+          <img src="assets/figures/taccorl-paper-preview/page-04.png?v=20260911" alt="" loading="lazy" decoding="async">
+          <img src="assets/figures/taccorl-paper-preview/page-05.png?v=20260911" alt="" loading="lazy" decoding="async">
+          <img src="assets/figures/taccorl-paper-preview/page-06.png?v=20260911" alt="" loading="lazy" decoding="async">
+          <img src="assets/figures/taccorl-paper-preview/page-07.png?v=20260911" alt="" loading="lazy" decoding="async">
+          <img src="assets/figures/taccorl-paper-preview/page-08.png?v=20260911" alt="" loading="lazy" decoding="async">
         </span>
       </a>
     </figure>
@@ -514,6 +543,6 @@ both VLM and the action expert.  Co-training provides the policy with <em class=
   </div>
 </footer>
 
-<script src="main.js?v=20260610"></script>
+<script src="main.js?v=20260911a"></script>
 </body>
 </html>

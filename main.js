@@ -125,6 +125,52 @@
     var firstMainSection = document.getElementById('overview');
     var footer = document.getElementById('footer');
     var links = nav.querySelectorAll('.toc-link');
+    var toggle = nav.querySelector('.toc-toggle');
+    var panel = document.getElementById('toc-panel');
+    var compactTocQuery = window.matchMedia && window.matchMedia('(min-width: 641px) and (max-width: 1540px), (min-width: 641px) and (max-height: 700px)');
+
+    function setTocCollapsed(collapsed) {
+      nav.classList.toggle('toc-collapsed', collapsed);
+      if (toggle) {
+        toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        toggle.setAttribute('aria-label', collapsed ? 'Show table of contents' : 'Hide table of contents');
+      }
+      if (panel) {
+        panel.setAttribute('aria-hidden', collapsed ? 'true' : 'false');
+      }
+    }
+
+    if (toggle && compactTocQuery) {
+      setTocCollapsed(compactTocQuery.matches);
+
+      toggle.addEventListener('click', function () {
+        setTocCollapsed(!nav.classList.contains('toc-collapsed'));
+      });
+
+      var syncTocLayout = function (event) {
+        setTocCollapsed(event.matches);
+      };
+
+      if (typeof compactTocQuery.addEventListener === 'function') {
+        compactTocQuery.addEventListener('change', syncTocLayout);
+      } else if (typeof compactTocQuery.addListener === 'function') {
+        compactTocQuery.addListener(syncTocLayout);
+      }
+
+      nav.addEventListener('keydown', function (event) {
+        if (event.key !== 'Escape' || nav.classList.contains('toc-collapsed')) return;
+        setTocCollapsed(true);
+        toggle.focus();
+      });
+
+      links.forEach(function (link) {
+        link.addEventListener('click', function () {
+          if (compactTocQuery.matches) {
+            setTocCollapsed(true);
+          }
+        });
+      });
+    }
 
     if (firstMainSection) {
       var updateNavVisibility = function () {
