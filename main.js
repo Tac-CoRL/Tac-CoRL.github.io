@@ -94,7 +94,7 @@
   }
 
   function setupSectionReveal() {
-    var sections = document.querySelectorAll('#overview, #summaryvideo, #method, #experiments');
+    var sections = document.querySelectorAll('#overview, #summaryvideo, #method, #experiments, #acknowledgments');
     if (!sections.length) return;
 
     if (prefersReducedMotion || !('IntersectionObserver' in window)) {

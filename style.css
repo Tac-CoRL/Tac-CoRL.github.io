@@ -120,6 +120,10 @@ main {
   order: 4;
 }
 
+#acknowledgments {
+  order: 5;
+}
+
 h1, h2, h3, h4 {
   color: var(--text);
   line-height: 1.12;
@@ -2440,15 +2444,6 @@ figcaption,
   padding: 44px 0 56px;
   border-top: 1px solid var(--border);
   background: var(--bg-alt);
-}
-
-#footer .container {
-  text-align: center;
-}
-
-#footer p {
-  color: var(--text-muted);
-  font-size: 0.806rem;
 }
 
 .section-reveal {
